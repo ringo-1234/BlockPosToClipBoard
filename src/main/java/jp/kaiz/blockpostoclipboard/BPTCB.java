@@ -1,59 +1,69 @@
 package jp.kaiz.blockpostoclipboard;
 
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-@Mod(modid = BPTCB.MODID, version = BPTCB.VERSION, name = BPTCB.MODID)
+@Mod(modid = BPTCB.MODID, version = BPTCB.VERSION, name = BPTCB.NAME)
+@Mod.EventBusSubscriber(modid = BPTCB.MODID)
 public class BPTCB extends Item {
-    public final static String MODID = "bptcb";
-    public final static String VERSION = "1.0";
+
+    public static final String MODID = "bptcb";
+    public static final String NAME = "BlockPosToClipBoard";
+    public static final String VERSION = "1.0";
+
+    public static final Item INSTANCE = new BPTCB();
+
     private boolean commaMode;
 
     public BPTCB() {
-        setCreativeTab(CreativeTabs.tabTools);
-        setUnlocalizedName(BPTCB.MODID + ":" + "itemBPTCB");
+        this.setCreativeTab(CreativeTabs.TOOLS);
+        this.setRegistryName("item_bptcb");
+        this.setUnlocalizedName(BPTCB.MODID + ".item_bptcb");
     }
 
-    @SideOnly(Side.CLIENT)
     @Override
-    public ItemStack onItemRightClick(ItemStack itemstack, World world, EntityPlayer player) {
-        if (world.isRemote) {
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
+        ItemStack itemstack = playerIn.getHeldItem(handIn);
+        if (worldIn.isRemote) {
             this.commaMode ^= true;
-            player.addChatMessage(new ChatComponentText(String.format("CommaMode=%s", this.commaMode)));
+            playerIn.sendMessage(new TextComponentString(String.format("CommaMode=%s", this.commaMode)));
         }
-        return itemstack;
+        return new ActionResult<>(EnumActionResult.SUCCESS, itemstack);
     }
 
-    @SideOnly(Side.CLIENT)
     @Override
-    public boolean onItemUse(ItemStack itemstack, EntityPlayer player, World world, int x, int y, int z, int side, float p, float q, float r) {
-        if (world.isRemote) {
-            String pos = String.format(this.commaMode ? "%s, %s, %s" : "%s %s %s", x, y, z);
-            player.addChatMessage(new ChatComponentText(String.format("Copied! (%s)", pos)));
-            GuiScreen.setClipboardString(pos);
+    public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        if (worldIn.isRemote) {
+            String posStr = String.format(this.commaMode ? "%s, %s, %s" : "%s %s %s", pos.getX(), pos.getY(), pos.getZ());
+            player.sendMessage(new TextComponentString(String.format("Copied! (%s)", posStr)));
+            GuiScreen.setClipboardString(posStr);
         }
-        return true;
+        return EnumActionResult.SUCCESS;
     }
 
-    @SideOnly(Side.CLIENT)
-    @Override
-    public void registerIcons(IIconRegister register) {
-        this.itemIcon = register.registerIcon(BPTCB.MODID + ":" + "itembptcb");
+    @SubscribeEvent
+    public static void registerItems(RegistryEvent.Register<Item> event) {
+        event.getRegistry().register(INSTANCE);
     }
 
-    @Mod.EventHandler
-    public void preInit(FMLPreInitializationEvent event) {
-        GameRegistry.registerItem(new BPTCB(), BPTCB.MODID + ":" + "itemBPTCB");
+    @SubscribeEvent
+    public static void registerModels(ModelRegistryEvent event) {
+        ModelLoader.setCustomModelResourceLocation(INSTANCE, 0, new ModelResourceLocation(INSTANCE.getRegistryName(), "inventory"));
     }
 }
