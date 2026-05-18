@@ -1,4 +1,3 @@
 # BlockPosToClipBoard
 ## これは何?
-BlockPosToClipBoardを持ってブロックをクリックすると、x, y, zをクリップボードに記録します。\
-8分で作れました。
+[BlockPosToClipBoard](https://github.com/Kai-Z-JP/BlockPosToClipBoard)の1.12.2版です。
